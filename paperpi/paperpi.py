@@ -24,7 +24,8 @@ from itertools import cycle
 from inspect import getfullargspec
 from importlib import import_module
 from pathlib import Path
-from distutils.util import strtobool
+# from distutils.util import strtobool
+from setuptools.distutils.util import strtobool
 from time import sleep
 from configparser import DuplicateSectionError
 from configparser import Error as ConfigParserError
