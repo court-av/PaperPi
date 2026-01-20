@@ -4,5 +4,4 @@ argconfigparse
 epdlib
 git+https://github.com/GregDMeyer/IT8951.git
 pillow
-rpi.gpio
 spidev
