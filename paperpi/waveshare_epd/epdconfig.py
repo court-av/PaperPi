@@ -46,49 +46,26 @@ class RaspberryPi:
 
     def __init__(self):
         import spidev
-        import gpiozero
+        import lgpio
 
+        self.lgpio = lgpio
+        self.chip = lgpio.gpiochip_open(0)
+
+        # Configure pins
+        lgpio.gpio_claim_output(self.chip, self.RST_PIN)
+        lgpio.gpio_claim_output(self.chip, self.DC_PIN)
+        lgpio.gpio_claim_output(self.chip, self.PWR_PIN)
+        lgpio.gpio_claim_input(self.chip, self.BUSY_PIN)
+
+        
         self.SPI = spidev.SpiDev()
-        self.GPIO_RST_PIN    = gpiozero.LED(self.RST_PIN)
-        self.GPIO_DC_PIN     = gpiozero.LED(self.DC_PIN)
-        # self.GPIO_CS_PIN     = gpiozero.LED(self.CS_PIN)
-        self.GPIO_PWR_PIN    = gpiozero.LED(self.PWR_PIN)
-        self.GPIO_BUSY_PIN   = gpiozero.Button(self.BUSY_PIN, pull_up = False)
 
     def digital_write(self, pin, value):
-        if pin == self.RST_PIN:
-            if value:
-                self.GPIO_RST_PIN.on()
-            else:
-                self.GPIO_RST_PIN.off()
-        elif pin == self.DC_PIN:
-            if value:
-                self.GPIO_DC_PIN.on()
-            else:
-                self.GPIO_DC_PIN.off()
-        # elif pin == self.CS_PIN:
-        #     if value:
-        #         self.GPIO_CS_PIN.on()
-        #     else:
-        #         self.GPIO_CS_PIN.off()
-        elif pin == self.PWR_PIN:
-            if value:
-                self.GPIO_PWR_PIN.on()
-            else:
-                self.GPIO_PWR_PIN.off()
+        self.lgpio.gpio_write(self.chip, pin, 1 if value else 0)
 
     def digital_read(self, pin):
-        if pin == self.BUSY_PIN:
-            return self.GPIO_BUSY_PIN.value
-        elif pin == self.RST_PIN:
-            return self.RST_PIN.value
-        elif pin == self.DC_PIN:
-            return self.DC_PIN.value
-        # elif pin == self.CS_PIN:
-        #     return self.CS_PIN.value
-        elif pin == self.PWR_PIN:
-            return self.PWR_PIN.value
-
+        return self.lgpio.gpio_read(self.chip, pin)
+        
     def delay_ms(self, delaytime):
         time.sleep(delaytime / 1000.0)
 
@@ -99,7 +76,7 @@ class RaspberryPi:
         self.SPI.writebytes2(data)
 
     def module_init(self):
-        self.GPIO_PWR_PIN.on()
+        self.lgpio.gpio_write(self.chip, self.PWR_PIN, 1)
 
         # SPI device, bus = 0, device = 0
         self.SPI.open(0, 0)
@@ -112,20 +89,12 @@ class RaspberryPi:
         self.SPI.close()
 
         
-        self.GPIO_RST_PIN.off()
-        self.GPIO_DC_PIN.off()
-        self.GPIO_PWR_PIN.off()
-        logger.debug("close 5V, Module enters 0 power consumption ...")
+        self.lgpio.gpio_write(self.chip, self.PWR_PIN, 0)
+        self.lgpio.gpio_write(self.chip, self.RST_PIN, 0)
+        self.lgpio.gpio_write(self.chip, self.DC_PIN, 0)
         
         if cleanup:
-            self.GPIO_RST_PIN.close()
-            self.GPIO_DC_PIN.close()
-            # self.GPIO_CS_PIN.close()
-            self.GPIO_PWR_PIN.close()
-            self.GPIO_BUSY_PIN.close()
-
-        
-
+            self.lgpio.gpiochip_close(self.chip)
 
 
 class JetsonNano:
